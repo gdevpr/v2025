@@ -109,12 +109,18 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
         #yesBtn {
             background: #2ecc71;
             color: white;
         }
 
-        #yesBtn:hover {
+        #yesBtn:hover:not(:disabled) {
             background: #27ae60;
             transform: scale(1.05);
         }
@@ -124,7 +130,7 @@
             color: white;
         }
 
-        #noBtn:hover {
+        #noBtn:hover:not(:disabled) {
             background: #c0392b;
             transform: scale(1.05);
         }
@@ -162,6 +168,15 @@
         }
 
         .failure.show {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .giveup-screen {
+            display: none;
+        }
+
+        .giveup-screen.show {
             display: block;
             animation: fadeIn 0.5s ease-in;
         }
@@ -233,6 +248,13 @@
             </div>
         </div>
 
+        <div class="giveup-screen" id="giveupScreen">
+            <div class="sad-emoji">😭💔😭</div>
+            <h2 style="color: #95a5a6; margin-bottom: 20px;">You gave up... 😢</h2>
+            <p style="color: #7f8c8d; margin-bottom: 15px; font-size: 1.2rem;">I guess I won't be your Valentine this year...</p>
+            <p style="color: #95a5a6; font-size: 1rem;">Maybe next time? 💔</p>
+        </div>
+
         <div class="celebration" id="celebration">
             <div class="heart">❤️💕💖💗💓💘</div>
             <h2>You're officially my Valentine! 🎉</h2>
@@ -249,6 +271,7 @@
         const questionContainer = document.getElementById('questionContainer');
         const celebration = document.getElementById('celebration');
         const failure = document.getElementById('failure');
+        const giveupScreen = document.getElementById('giveupScreen');
         const retryBtn = document.getElementById('retryBtn');
         const giveupBtn = document.getElementById('giveupBtn');
 
@@ -289,6 +312,16 @@
         let currentQuestion = 0;
         let progress = 0;
 
+        function disableButtons() {
+            yesBtn.disabled = true;
+            noBtn.disabled = true;
+        }
+
+        function enableButtons() {
+            yesBtn.disabled = false;
+            noBtn.disabled = false;
+        }
+
         function showQuestion() {
             if (currentQuestion >= questions.length) {
                 checkCompletion();
@@ -297,19 +330,11 @@
 
             question.textContent = questions[currentQuestion].text;
             feedback.textContent = '';
+            enableButtons();
         }
 
-        function updateProgress(increase) {
-            if (increase) {
-                progress += 20;
-            } else {
-                progress = 0;
-                progressBar.classList.add('reset');
-                setTimeout(() => {
-                    progressBar.classList.remove('reset');
-                }, 500);
-            }
-
+        function updateProgress(value) {
+            progress = value;
             progressBar.style.width = progress + '%';
             progressBar.textContent = progress + '%';
         }
@@ -323,28 +348,32 @@
         }
 
         function handleAnswer(answer) {
+            disableButtons(); // Disable buttons immediately after click
+            
             const current = questions[currentQuestion];
             const isCorrect = answer === current.correctAnswer;
 
-            if (isCorrect) {
-                feedback.textContent = current.correctFeedback;
-                feedback.style.color = '#2ecc71';
-                updateProgress(true);
-                
-                setTimeout(() => {
-                    currentQuestion++;
-                    showQuestion();
-                }, 1500);
-            } else {
-                feedback.textContent = current.wrongFeedback;
-                feedback.style.color = '#e74c3c';
-                
-                if (current.isCritical) {
-                    // Critical question (last one) - show progress reset
+            if (current.isCritical) {
+                // Critical question (last one) - special handling
+                if (isCorrect) {
+                    // YES on critical question = instant 100%!
+                    feedback.textContent = current.correctFeedback;
+                    feedback.style.color = '#2ecc71';
+                    updateProgress(100);
+                    
+                    setTimeout(() => {
+                        currentQuestion++;
+                        showQuestion();
+                    }, 1500);
+                } else {
+                    // NO on critical question = reset to 0%
+                    feedback.textContent = current.wrongFeedback;
+                    feedback.style.color = '#e74c3c';
+                    
                     progressBar.classList.add('shake');
                     
                     setTimeout(() => {
-                        updateProgress(false); // Reset progress to 0
+                        updateProgress(0); // Reset progress to 0
                         progressBar.classList.remove('shake');
                     }, 500);
                     
@@ -352,7 +381,22 @@
                         currentQuestion++;
                         showQuestion(); // This will trigger checkCompletion since we're at the end
                     }, 2000);
+                }
+            } else {
+                // Non-critical questions
+                if (isCorrect) {
+                    feedback.textContent = current.correctFeedback;
+                    feedback.style.color = '#2ecc71';
+                    updateProgress(progress + 20);
+                    
+                    setTimeout(() => {
+                        currentQuestion++;
+                        showQuestion();
+                    }, 1500);
                 } else {
+                    feedback.textContent = current.wrongFeedback;
+                    feedback.style.color = '#e74c3c';
+                    
                     // Wrong answer but not critical - just move on without progress
                     setTimeout(() => {
                         currentQuestion++;
@@ -367,11 +411,22 @@
             failure.classList.add('show');
         }
 
+        function showGiveUp() {
+            questionContainer.classList.add('hidden');
+            failure.classList.remove('show');
+            giveupScreen.classList.add('show');
+            
+            // Sad mouse confetti effect
+            for (let i = 0; i < 30; i++) {
+                createSadConfetti();
+            }
+        }
+
         function showCelebration() {
             questionContainer.classList.add('hidden');
             celebration.classList.add('show');
             
-            // Confetti effect
+            // Happy confetti effect
             for (let i = 0; i < 50; i++) {
                 createConfetti();
             }
@@ -385,6 +440,7 @@
             questionContainer.classList.remove('hidden');
             failure.classList.remove('show');
             celebration.classList.remove('show');
+            giveupScreen.classList.remove('show');
             showQuestion();
         }
 
@@ -413,10 +469,35 @@
             }, 3000);
         }
 
+        function createSadConfetti() {
+            const confetti = document.createElement('div');
+            confetti.textContent = ['😢', '😭', '💔', '😔', '😞'][Math.floor(Math.random() * 5)];
+            confetti.style.position = 'fixed';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.top = '-50px';
+            confetti.style.fontSize = '2rem';
+            confetti.style.opacity = '1';
+            confetti.style.transition = 'all 4s ease-out';
+            confetti.style.pointerEvents = 'none';
+            confetti.style.zIndex = '1000';
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+                confetti.style.top = '100vh';
+                confetti.style.opacity = '0';
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+            }, 10);
+            
+            setTimeout(() => {
+                confetti.remove();
+            }, 4000);
+        }
+
         yesBtn.addEventListener('click', () => handleAnswer('yes'));
         noBtn.addEventListener('click', () => handleAnswer('no'));
         retryBtn.addEventListener('click', resetQuiz);
-        giveupBtn.addEventListener('click', showCelebration);
+        giveupBtn.addEventListener('click', showGiveUp);
 
         // Start the questionnaire
         showQuestion();

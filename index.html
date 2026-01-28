@@ -136,34 +136,34 @@
         const celebration = document.getElementById('celebration');
 
         const funnyMessages = [
-            "Are you sure? It's my turn to ask! 🥺",
-            "Really? Think about it... 💭",
-            "Come on, just say yes! 😊",
-            "The Yes button is looking pretty good... 👀",
-            "No? But I got you flowers! 🌹",
-            "Pretty please? 🙏",
-            "I promise to be the best Valentine! 💕",
-            "Don't make me beg! 😅",
-            "Yes is just one click away... ✨",
-            "You know you want to say yes! 😏"
+            "Wait, hold on... let me think about this 🤔",
+            "Hmm, are you REALLY sure? 😏",
+            "That was too easy, try again! 😂",
+            "Nope! The No button is looking better! 👀",
+            "Wrong button! Click No instead! 😅",
+            "Are you being serious right now? 🙃",
+            "I need more convincing... 💭",
+            "The No button grew! Maybe that's a sign? 😈",
+            "Let me reconsider... Nah! 😂",
+            "Try the big red button instead! 🔴"
         ];
 
-        let noClickCount = 0;
+        let yesClickCount = 0;
         let yesFontSize = 1.2;
         let noFontSize = 1.2;
 
-        noBtn.addEventListener('click', () => {
-            noClickCount++;
+        yesBtn.addEventListener('click', () => {
+            yesClickCount++;
             
             // Shrink Yes button
             yesFontSize = Math.max(0.6, yesFontSize - 0.1);
             yesBtn.style.fontSize = `${yesFontSize}rem`;
-            yesBtn.style.padding = `${15 - noClickCount}px ${30 - noClickCount * 2}px`;
+            yesBtn.style.padding = `${15 - yesClickCount}px ${30 - yesClickCount * 2}px`;
             
             // Grow No button
             noFontSize += 0.15;
             noBtn.style.fontSize = `${noFontSize}rem`;
-            noBtn.style.padding = `${15 + noClickCount * 2}px ${30 + noClickCount * 3}px`;
+            noBtn.style.padding = `${15 + yesClickCount * 2}px ${30 + yesClickCount * 3}px`;
             
             // Change message
             const randomIndex = Math.floor(Math.random() * funnyMessages.length);
@@ -171,7 +171,7 @@
             message.style.color = '#e74c3c';
         });
 
-        yesBtn.addEventListener('click', () => {
+        noBtn.addEventListener('click', () => {
             buttonContainer.style.display = 'none';
             message.style.display = 'none';
             celebration.classList.add('show');
